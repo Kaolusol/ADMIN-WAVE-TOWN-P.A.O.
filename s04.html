@@ -11,113 +11,117 @@
         body { font-family: 'Kanit', sans-serif; margin: 0; display: flex; background: #f4f7f6; }
         .sidebar { width: 240px; background: var(--main); color: white; height: 100vh; position: fixed; padding: 30px; box-sizing: border-box; }
         .content { margin-left: 240px; flex: 1; padding: 40px; }
-        .card { background: white; padding: 25px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 30px; border-left: 6px solid var(--gold); }
-        h3 { color: var(--main); margin-top: 0; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+        .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 25px; border-left: 6px solid var(--gold); }
         input, select, textarea, .btn { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 8px; font-family: 'Kanit'; box-sizing: border-box; }
         .btn { background: var(--main); color: white; border: none; font-weight: 600; cursor: pointer; }
-        table { width: 100%; border-collapse: collapse; background: white; margin-top: 15px; }
-        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; font-size: 0.9rem; }
-        .thumb { width: 50px; height: 50px; object-fit: cover; cursor: pointer; border: 1px solid #ddd; border-radius: 5px; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+        th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; font-size: 0.85rem; }
+        .del-btn { background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-top: 5px; }
+        .img-preview { width: 45px; height: 45px; object-fit: cover; border-radius: 4px; margin: 2px; cursor: pointer; border: 1px solid #ddd; }
+        #imgModal { display: none; position: fixed; z-index: 9999; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); text-align: center; padding-top: 50px; }
+        #modalImg { max-width: 90%; max-height: 80%; border: 3px solid var(--gold); }
     </style>
 </head>
 <body>
 
+<div id="imgModal" onclick="this.style.display='none'"><img id="modalImg"><br><p style="color:white;">คลิกเพื่อปิด</p></div>
+
 <div class="sidebar">
     <h2 style="color:var(--gold)">WT ADMIN</h2>
-    <p>● จัดการหน้าหลัก</p>
-    <p>● จัดการคำร้อง</p>
+    <p>● จัดการระบบ</p>
 </div>
 
 <div class="content">
     <div class="card">
-        <h3>⚙️ ตั้งค่าประกาศ & วิสัยทัศน์</h3>
-        <input type="text" id="tI" placeholder="ประกาศวิ่ง...">
-        <input type="text" id="vI" placeholder="วิสัยทัศน์...">
-        <button class="btn" onclick="saveSet()">บันทึกข้อมูล</button>
+        <h3>📢 ลงข่าวสาร (หลายรูป)</h3>
+        <input type="text" id="nT" placeholder="หัวข้อ">
+        <textarea id="nD" placeholder="รายละเอียด"></textarea>
+        <input type="file" id="nI" accept="image/*" multiple>
+        <button class="btn" onclick="addNews()">ลงประกาศข่าว</button>
+        <div id="newsList" style="margin-top:15px; border-top:1px solid #eee; padding-top:10px;"></div>
     </div>
 
     <div class="card">
-        <h3>📰 ลงข่าวประชาสัมพันธ์ใหม่</h3>
-        <input type="text" id="nT" placeholder="หัวข้อข่าว">
-        <textarea id="nD" placeholder="รายละเอียดข่าว" rows="3"></textarea>
-        <input type="file" id="nI" accept="image/*">
-        <button class="btn" style="background: #27ae60;" onclick="addNews()">ประกาศข่าวลงหน้าแรก</button>
-    </div>
-
-    <div class="card">
-        <h3>📑 รายการคำร้องออนไลน์</h3>
+        <h3>📑 รายการคำร้อง (สถานะ 3 ขั้นตอน & ส่งไฟล์คืน)</h3>
         <table>
-            <thead><tr><th>ชื่อ/รหัส</th><th>รูป ปชช.</th><th>รหัสท้าย</th><th>สถานะ</th><th>รูปคืน</th><th>จัดการ</th></tr></thead>
+            <thead><tr><th>ชื่อ/รหัส/ประเภท</th><th>รูปหลักฐาน</th><th>สถานะ/รหัสท้าย</th><th>ส่งไฟล์คืน ปชช.</th><th>จัดการ</th></tr></thead>
             <tbody id="aTable"></tbody>
         </table>
     </div>
 </div>
 
 <script>
-    const firebaseConfig = {
+    firebase.initializeApp({
         apiKey: "AIzaSyBDNOxOj0WZof4j6oXj5-VkG7IE2VxnzMg",
         authDomain: "wave-town-pao.firebaseapp.com",
         databaseURL: "https://wave-town-pao-default-rtdb.asia-southeast1.firebasedatabase.app",
         projectId: "wave-town-pao",
         storageBucket: "wave-town-pao.firebasestorage.app",
         messagingSenderId: "863640463132",
-        appId: "1:863640463132:web:f0d181ad0171ea96c13cd9",
-        measurementId: "G-XRR1E04NSW"
-    };
-    firebase.initializeApp(firebaseConfig);
+        appId: "1:863640463132:web:f0d181ad0171ea96c13cd9"
+    });
     const db = firebase.database();
 
-    function saveSet() {
-        db.ref('settings').update({ ticker: document.getElementById('tI').value, vision: document.getElementById('vI').value });
-        alert("บันทึกสำเร็จ!");
+    function viewImg(src) { document.getElementById('modalImg').src = src; document.getElementById('imgModal').style.display = 'block'; }
+
+    async function addNews() {
+        const files = document.getElementById('nI').files;
+        let imgArray = [];
+        if(files.length === 0) return alert("เลือกรูปด้วยครับ");
+        for(let f of files) {
+            const b64 = await new Promise(r => { const reader = new FileReader(); reader.onload = ev => r(ev.target.result); reader.readAsDataURL(f); });
+            imgArray.push(b64);
+        }
+        db.ref('news').push({ title: document.getElementById('nT').value, detail: document.getElementById('nD').value, imgs: imgArray });
+        alert("ลงข่าวสำเร็จ!");
     }
 
-    function addNews() {
-        const file = document.getElementById('nI').files[0];
-        const reader = new FileReader();
-        reader.onload = (e) => {
-            db.ref('news').push({
-                title: document.getElementById('nT').value,
-                detail: document.getElementById('nD').value,
-                img: e.target.result
-            }).then(() => { alert("ลงข่าวสำเร็จ!"); location.reload(); });
-        };
-        if(file) reader.readAsDataURL(file);
-    }
+    db.ref('news').on('value', s => {
+        let h = ""; const data = s.val();
+        for(let k in data) h += `<div style="font-size:0.8rem; margin:5px 0;">${data[k].title} <button class="del-btn" onclick="db.ref('news/${k}').remove()">ลบข่าว</button></div>`;
+        document.getElementById('newsList').innerHTML = h || "ยังไม่มีข่าว";
+    });
 
     db.ref('requests').on('value', s => {
-        const data = s.val();
-        let html = "";
+        const data = s.val(); let h = "";
         for(let k in data) {
-            html += `<tr>
-                <td>${data[k].name}<br><small>${data[k].id}</small></td>
-                <td><img src="${data[k].img}" class="thumb" onclick="window.open(this.src)"></td>
-                <td><input type="text" id="c-${k}" value="${data[k].code || ''}" style="width:60px;"></td>
+            let pImgs = Array.isArray(data[k].imgs) ? data[k].imgs : [data[k].img];
+            let imgHtml = pImgs.map(src => `<img src="${src}" class="img-preview" onclick="viewImg('${src}')">`).join('');
+            
+            h += `<tr>
+                <td><b>${data[k].name}</b><br><small>${data[k].type}</small><br><small>${data[k].id}</small></td>
+                <td><div style="display:flex; flex-wrap:wrap; max-width:140px;">${imgHtml}</div></td>
                 <td>
-                    <select id="s-${k}">
+                    <select id="s-${k}" style="font-size:10px;">
                         <option value="🟠 รอตรวจสอบ" ${data[k].status.includes('ตรวจสอบ')?'selected':''}>รอตรวจสอบ</option>
                         <option value="🔵 รออนุมัติ" ${data[k].status.includes('อนุมัติ')?'selected':''}>รออนุมัติ</option>
                         <option value="🟢 เสร็จสิ้น" ${data[k].status.includes('เสร็จ')?'selected':''}>เสร็จสิ้น</option>
                     </select>
+                    <input type="text" id="c-${k}" value="${data[k].code||''}" placeholder="รหัสท้าย" style="width:60px;">
                 </td>
                 <td><input type="file" id="f-${k}" style="font-size:10px;"></td>
-                <td><button class="btn" style="padding:5px;" onclick="update('${k}')">Save</button></td>
+                <td>
+                    <button class="btn" style="padding:5px;" onclick="updateReq('${k}')">บันทึก</button>
+                    <button class="del-btn" onclick="if(confirm('ลบเอกสาร?')) db.ref('requests/${k}').remove()">ลบ</button>
+                </td>
             </tr>`;
         }
-        document.getElementById('aTable').innerHTML = html;
+        document.getElementById('aTable').innerHTML = h;
     });
 
-    function update(id) {
+    async function updateReq(id) {
         const status = document.getElementById('s-'+id).value;
         const code = document.getElementById('c-'+id).value;
-        const file = document.getElementById('f-'+id).files[0];
-        if(file) {
-            const r = new FileReader();
-            r.onload = (e) => { db.ref('requests/'+id).update({ status, code, adminImg: e.target.result }); alert("Update Success!"); };
-            r.readAsDataURL(file);
-        } else {
-            db.ref('requests/'+id).update({ status, code }); alert("Status Updated!");
+        const fileInp = document.getElementById('f-'+id).files[0];
+        
+        let updateData = { status, code };
+        
+        if(fileInp) {
+            const b64 = await new Promise(r => { const reader = new FileReader(); reader.onload = ev => r(ev.target.result); reader.readAsDataURL(fileInp); });
+            updateData.returnFile = b64;
         }
+        
+        db.ref('requests/'+id).update(updateData).then(() => alert("อัปเดตข้อมูลสำเร็จ!"));
     }
 </script>
 </body>
