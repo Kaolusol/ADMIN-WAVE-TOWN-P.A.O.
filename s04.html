@@ -2,49 +2,74 @@
 <html lang="th">
 <head>
     <meta charset="UTF-8">
-    <title>WT Admin | Management</title>
+    <title>WT Admin | Management System</title>
     <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;500;600&display=swap" rel="stylesheet">
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.1.1/firebase-database-compat.js"></script>
     <style>
-        :root { --main: #2d0054; --gold: #ffd700; }
+        :root { --main: #2d0054; --gold: #ffd700; --blue: #3498db; --green: #27ae60; }
         body { font-family: 'Kanit', sans-serif; margin: 0; display: flex; background: #f4f7f6; }
         .sidebar { width: 240px; background: var(--main); color: white; height: 100vh; position: fixed; padding: 30px; box-sizing: border-box; }
         .content { margin-left: 240px; flex: 1; padding: 40px; }
         .card { background: white; padding: 20px; border-radius: 15px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); margin-bottom: 25px; border-left: 6px solid var(--gold); }
         input, select, textarea, .btn { width: 100%; padding: 10px; margin: 5px 0; border: 1px solid #ddd; border-radius: 8px; font-family: 'Kanit'; box-sizing: border-box; }
-        .btn { background: var(--main); color: white; border: none; font-weight: 600; cursor: pointer; }
-        table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-        th, td { padding: 10px; border-bottom: 1px solid #eee; text-align: left; font-size: 0.85rem; }
-        .del-btn { background: #e74c3c; color: white; border: none; padding: 5px 10px; border-radius: 5px; cursor: pointer; margin-top: 5px; }
-        .img-preview { width: 45px; height: 45px; object-fit: cover; border-radius: 4px; margin: 2px; cursor: pointer; border: 1px solid #ddd; }
-        #imgModal { display: none; position: fixed; z-index: 9999; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); text-align: center; padding-top: 50px; }
-        #modalImg { max-width: 90%; max-height: 80%; border: 3px solid var(--gold); }
+        .btn { background: var(--main); color: white; border: none; font-weight: 600; cursor: pointer; transition: 0.3s; }
+        .btn:hover { opacity: 0.8; }
+        table { width: 100%; border-collapse: collapse; margin-top: 10px; background: white; }
+        th, td { padding: 12px; border-bottom: 1px solid #eee; text-align: left; font-size: 0.85rem; }
+        th { background: #f8f9fa; color: var(--main); }
+        .img-preview { width: 50px; height: 50px; object-fit: cover; border-radius: 6px; margin: 2px; cursor: pointer; border: 2px solid #eee; }
+        #imgModal { display: none; position: fixed; z-index: 9999; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.9); text-align: center; padding-top: 30px; }
+        #modalImg { max-width: 90%; max-height: 80%; border: 3px solid var(--gold); border-radius: 10px; }
+        .step-label { font-size: 0.7rem; color: #666; font-weight: bold; display: block; margin-top: 5px; }
     </style>
 </head>
 <body>
 
-<div id="imgModal" onclick="this.style.display='none'"><img id="modalImg"><br><p style="color:white;">คลิกเพื่อปิด</p></div>
+<div id="imgModal" onclick="this.style.display='none'">
+    <img id="modalImg">
+    <div style="color:white; margin-top:15px;">
+        <p>คลิกที่ใดก็ได้เพื่อปิด</p>
+        <a id="dlLink" download="citizen_doc.png" style="color:var(--gold); text-decoration:none; font-size:1.2rem; background:rgba(255,255,255,0.1); padding:10px 20px; border-radius:30px;">💾 คลิกขวาที่รูปหรือกดตรงนี้เพื่อบันทึกรูป</a>
+    </div>
+</div>
 
 <div class="sidebar">
     <h2 style="color:var(--gold)">WT ADMIN</h2>
-    <p>● จัดการระบบ</p>
+    <p>ระบบจัดการสารสนเทศ</p>
+    <hr style="border:0; border-top:1px solid rgba(255,255,255,0.1);">
+    <small>สถานะงาน:<br>1. ตรวจสอบ/เซฟรูป<br>2. เปลี่ยนเป็น "รออนุมัติ"<br>3. ใส่รหัสท้าย<br>4. เสร็จสิ้น & แนบไฟล์คืน</small>
 </div>
 
 <div class="content">
-    <div class="card">
-        <h3>📢 ลงข่าวสาร (หลายรูป)</h3>
-        <input type="text" id="nT" placeholder="หัวข้อ">
-        <textarea id="nD" placeholder="รายละเอียด"></textarea>
-        <input type="file" id="nI" accept="image/*" multiple>
-        <button class="btn" onclick="addNews()">ลงประกาศข่าว</button>
-        <div id="newsList" style="margin-top:15px; border-top:1px solid #eee; padding-top:10px;"></div>
+    <div class="card" style="border-left-color: #3498db;">
+        <h3>⚙️ ตั้งค่าระบบเว็บไซต์</h3>
+        <input type="text" id="setTicker" placeholder="ข้อความประกาศวิ่ง">
+        <input type="text" id="setVision" placeholder="วิสัยทัศน์หน้าเว็บ">
+        <button class="btn" style="background:#3498db;" onclick="saveSets()">อัปเดตข้อมูลระบบ</button>
     </div>
 
     <div class="card">
-        <h3>📑 รายการคำร้อง (สถานะ 3 ขั้นตอน & ส่งไฟล์คืน)</h3>
+        <h3>📢 ลงข่าวสาร (Facebook Style)</h3>
+        <input type="text" id="nT" placeholder="หัวข้อข่าว">
+        <textarea id="nD" placeholder="รายละเอียดข่าว"></textarea>
+        <input type="file" id="nI" accept="image/*" multiple>
+        <button class="btn" onclick="addNews()">ลงประกาศข่าว</button>
+        <div id="newsList" style="margin-top:10px;"></div>
+    </div>
+
+    <div class="card">
+        <h3>📑 รายการคำร้อง (คลิกเซฟรูป -> รอนุมัติ -> เสร็จสิ้น)</h3>
         <table>
-            <thead><tr><th>ชื่อ/รหัส/ประเภท</th><th>รูปหลักฐาน</th><th>สถานะ/รหัสท้าย</th><th>ส่งไฟล์คืน ปชช.</th><th>จัดการ</th></tr></thead>
+            <thead>
+                <tr>
+                    <th>ข้อมูลประชาชน</th>
+                    <th>หลักฐาน (คลิกเซฟ)</th>
+                    <th>จัดการสถานะ/รหัส</th>
+                    <th>แนบไฟล์เซ็นแล้ว</th>
+                    <th>จัดการ</th>
+                </tr>
+            </thead>
             <tbody id="aTable"></tbody>
         </table>
     </div>
@@ -62,12 +87,31 @@
     });
     const db = firebase.database();
 
-    function viewImg(src) { document.getElementById('modalImg').src = src; document.getElementById('imgModal').style.display = 'block'; }
+    // ฟังก์ชันตั้งค่าระบบที่ดึงกลับมา
+    function saveSets() {
+        db.ref('settings').set({
+            ticker: document.getElementById('setTicker').value,
+            vision: document.getElementById('setVision').value
+        }).then(() => alert("อัปเดตตัววิ่งและวิสัยทัศน์แล้ว!"));
+    }
+    // ดึงค่าปัจจุบันมาโชว์ในช่องกรอก
+    db.ref('settings').once('value', s => {
+        const v = s.val(); if(v){ 
+            document.getElementById('setTicker').value = v.ticker; 
+            document.getElementById('setVision').value = v.vision;
+        }
+    });
+
+    function viewImg(src) { 
+        document.getElementById('modalImg').src = src; 
+        document.getElementById('dlLink').href = src;
+        document.getElementById('imgModal').style.display = 'block'; 
+    }
 
     async function addNews() {
         const files = document.getElementById('nI').files;
         let imgArray = [];
-        if(files.length === 0) return alert("เลือกรูปด้วยครับ");
+        if(files.length === 0) return alert("กรุณาเลือกรูปภาพ");
         for(let f of files) {
             const b64 = await new Promise(r => { const reader = new FileReader(); reader.onload = ev => r(ev.target.result); reader.readAsDataURL(f); });
             imgArray.push(b64);
@@ -78,8 +122,8 @@
 
     db.ref('news').on('value', s => {
         let h = ""; const data = s.val();
-        for(let k in data) h += `<div style="font-size:0.8rem; margin:5px 0;">${data[k].title} <button class="del-btn" onclick="db.ref('news/${k}').remove()">ลบข่าว</button></div>`;
-        document.getElementById('newsList').innerHTML = h || "ยังไม่มีข่าว";
+        for(let k in data) h += `<div style="font-size:0.8rem; border-bottom:1px solid #eee; padding:5px 0;">${data[k].title} <button onclick="db.ref('news/${k}').remove()" style="color:red; background:none; border:none; cursor:pointer;">[ลบข่าว]</button></div>`;
+        document.getElementById('newsList').innerHTML = h;
     });
 
     db.ref('requests').on('value', s => {
@@ -89,20 +133,20 @@
             let imgHtml = pImgs.map(src => `<img src="${src}" class="img-preview" onclick="viewImg('${src}')">`).join('');
             
             h += `<tr>
-                <td><b>${data[k].name}</b><br><small>${data[k].type}</small><br><small>${data[k].id}</small></td>
-                <td><div style="display:flex; flex-wrap:wrap; max-width:140px;">${imgHtml}</div></td>
+                <td><b>${data[k].name}</b><br><span style="color:var(--blue)">${data[k].type}</span><br><small>ID: ${data[k].id}</small></td>
+                <td><div style="display:flex; flex-wrap:wrap; width:120px;">${imgHtml}</div></td>
                 <td>
-                    <select id="s-${k}" style="font-size:10px;">
-                        <option value="🟠 รอตรวจสอบ" ${data[k].status.includes('ตรวจสอบ')?'selected':''}>รอตรวจสอบ</option>
-                        <option value="🔵 รออนุมัติ" ${data[k].status.includes('อนุมัติ')?'selected':''}>รออนุมัติ</option>
-                        <option value="🟢 เสร็จสิ้น" ${data[k].status.includes('เสร็จ')?'selected':''}>เสร็จสิ้น</option>
+                    <select id="s-${k}" style="font-size:0.8rem;">
+                        <option value="🟠 รอตรวจสอบ" ${data[k].status.includes('ตรวจสอบ')?'selected':''}>🟠 รอตรวจสอบ</option>
+                        <option value="🔵 รออนุมัติ" ${data[k].status.includes('อนุมัติ')?'selected':''}>🔵 รออนุมัติ</option>
+                        <option value="🟢 เสร็จสิ้น" ${data[k].status.includes('เสร็จ')?'selected':''}>🟢 เสร็จสิ้น</option>
                     </select>
-                    <input type="text" id="c-${k}" value="${data[k].code||''}" placeholder="รหัสท้าย" style="width:60px;">
+                    <input type="text" id="c-${k}" value="${data[k].code||''}" placeholder="เลขรหัสท้าย" style="height:30px; font-size:0.8rem;">
                 </td>
-                <td><input type="file" id="f-${k}" style="font-size:10px;"></td>
+                <td><input type="file" id="f-${k}" style="font-size:0.7rem;"></td>
                 <td>
-                    <button class="btn" style="padding:5px;" onclick="updateReq('${k}')">บันทึก</button>
-                    <button class="del-btn" onclick="if(confirm('ลบเอกสาร?')) db.ref('requests/${k}').remove()">ลบ</button>
+                    <button class="btn" style="padding:8px; background:var(--green);" onclick="updateReq('${k}')">บันทึก</button>
+                    <button onclick="if(confirm('ลบคำร้อง?')) db.ref('requests/${k}').remove()" style="background:none; border:none; color:red; cursor:pointer; font-size:0.7rem; margin-top:5px; display:block;">ลบทิ้ง</button>
                 </td>
             </tr>`;
         }
@@ -113,15 +157,16 @@
         const status = document.getElementById('s-'+id).value;
         const code = document.getElementById('c-'+id).value;
         const fileInp = document.getElementById('f-'+id).files[0];
-        
         let updateData = { status, code };
-        
+        if(status.includes('เสร็จสิ้น') && !fileInp) {
+            const snap = await db.ref('requests/'+id).once('value');
+            if(!snap.val().returnFile) return alert("ต้องแนบไฟล์เซ็นแล้วก่อนจบงาน");
+        }
         if(fileInp) {
             const b64 = await new Promise(r => { const reader = new FileReader(); reader.onload = ev => r(ev.target.result); reader.readAsDataURL(fileInp); });
             updateData.returnFile = b64;
         }
-        
-        db.ref('requests/'+id).update(updateData).then(() => alert("อัปเดตข้อมูลสำเร็จ!"));
+        db.ref('requests/'+id).update(updateData).then(() => alert("บันทึกสำเร็จ!"));
     }
 </script>
 </body>
